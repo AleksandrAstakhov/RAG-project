@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mistralai import Mistral
-import math
+from spellchecker import SpellChecker
 
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -92,7 +92,21 @@ prompt_template = PromptTemplate(
     template=PROMPT
 )
 
+spell = SpellChecker(language="ru")
+
+def fix_typos(text: str) -> str:
+    words = text.split()
+    misspelled = spell.unknown(words)
+    corrected = []
+    for w in words:
+        if w in misspelled:
+            corrected.append(spell.correction(w))
+        else:
+            corrected.append(w)
+    return " ".join(corrected)
+
 def answer_sentence(sentence, retriever, llm):
+    sentence = fix_typos(sentence)
     docs = retriever.invoke(sentence)
     context = "\n\n".join([d.page_content for d in docs])
     prompt = prompt_template.format(sentence=sentence, context=context)
