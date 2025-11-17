@@ -8,6 +8,7 @@ from mistralai import Mistral
 from spellchecker import SpellChecker
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import PromptTemplate
+from yandex_speller import YandexSpeller
 
 def load_wiki_for_query(query: str, lang="ru", max_articles=3):
     wikipedia.set_lang(lang)
@@ -91,22 +92,30 @@ prompt_template = PromptTemplate(
     template=PROMPT
 )
 
-spell = SpellChecker(language="ru")
+# spell = SpellChecker(language="ru")
 
-def fix_typos(text: str) -> str:
-    words = text.split()
-    misspelled = spell.unknown(words)
-    corrected = []
-    for w in words:
-        if w in misspelled:
-            correction = spell.correction(w)
-            corrected.append(correction if correction is not None else w)
-        else:
-            corrected.append(w)
-    return " ".join(corrected)
+# def fix_typos(text: str) -> str:
+#     words = text.split()
+#     misspelled = spell.unknown(words)
+#     corrected = []
+#     for w in words:
+#         if w in misspelled:
+#             correction = spell.correction(w)
+#             corrected.append(correction if correction is not None else w)
+#         else:
+#             corrected.append(w)
+#     return " ".join(corrected)
+speller = YandexSpeller(lang="ru")
+
+def fix_typos_yandex(text: str) -> str:
+    try:
+        fixed_text = speller.spelled(text)
+        return fixed_text
+    except Exception as e:
+        return text
 
 def answer_sentence(sentence, retriever, llm):
-    sentence = fix_typos(sentence)
+    sentence = fix_typos_yandex(sentence)
     docs = retriever.invoke(sentence)
     context = "\n\n".join([d.page_content for d in docs])
     prompt = prompt_template.format(sentence=sentence, context=context)
