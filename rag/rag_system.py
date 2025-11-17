@@ -8,7 +8,7 @@ from mistralai import Mistral
 from spellchecker import SpellChecker
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import PromptTemplate
-from yandex_speller import YandexSpeller
+from pyaspeller import YandexSpeller
 
 def load_wiki_for_query(query: str, lang="ru", max_articles=3):
     wikipedia.set_lang(lang)

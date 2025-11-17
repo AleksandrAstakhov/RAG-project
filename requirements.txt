@@ -7,4 +7,4 @@ mistralai
 diskcache
 langchain_huggingface
 pyspellchecker
-yandex-speller
+pyaspeller
