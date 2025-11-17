@@ -2,11 +2,9 @@ name: RAG Model Test
 
 on:
   push:
-    branches: ["main"]
+    branches: ["dev"]
   pull_request:
     branches: ["main"]
-  commit:
-    branches: ["dev"]
   workflow_dispatch:
 
 jobs:
