@@ -48,7 +48,7 @@ class MistralLLM:
         ]
 
         completion_args = {
-            "temperature": 0.7,
+            "temperature": 0.1,
             "max_tokens": 2048,
             "top_p": 1
         }
@@ -94,19 +94,19 @@ prompt_template = PromptTemplate(
 
 spell = SpellChecker(language="ru")
 
-def fix_typos(text: str) -> str:
-    words = text.split()
-    misspelled = spell.unknown(words)
-    corrected = []
-    for w in words:
-        if w in misspelled:
-            corrected.append(spell.correction(w))
-        else:
-            corrected.append(w)
-    return " ".join(corrected)
+# def fix_typos(text: str) -> str:
+#     words = text.split()
+#     misspelled = spell.unknown(words)
+#     corrected = []
+#     for w in words:
+#         if w in misspelled:
+#             corrected.append(spell.correction(w))
+#         else:
+#             corrected.append(w)
+#     return " ".join(corrected)
 
 def answer_sentence(sentence, retriever, llm):
-    sentence = fix_typos(sentence)
+    # sentence = fix_typos(sentence)
     docs = retriever.invoke(sentence)
     context = "\n\n".join([d.page_content for d in docs])
     prompt = prompt_template.format(sentence=sentence, context=context)
