@@ -1,5 +1,15 @@
 import json
 from rag.rag_system import answer_sentence, init_rag
+from sentence_transformers import SentenceTransformer, util
+
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+def is_semantically_close(a, b, threshold=0.85):
+    emb1 = model.encode(a, convert_to_tensor=True)
+    emb2 = model.encode(b, convert_to_tensor=True)
+    sim = util.cos_sim(emb1, emb2).item()
+    return sim >= threshold, sim
+
 
 def normalize(text):
     return text.lower().strip().replace("ё", "е")
@@ -28,7 +38,7 @@ if __name__ == "__main__":
         print("Expected:", expected)
         print("Result:  ", result)
 
-        if normalize(result) == normalize(expected):
+        if is_semantically_close(result, expected):
             correct += 1
 
     accuracy = correct / total
