@@ -1,5 +1,5 @@
 import json
-from rag_system import answer_sentence, init_rag
+from rag.rag_system import answer_sentence, init_rag
 
 def normalize(text):
     return text.lower().strip().replace("ё", "е")
