@@ -2,9 +2,10 @@ import os
 import wikipedia
 from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mistralai import Mistral
+
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from langchain_core.prompts import PromptTemplate
 
@@ -70,7 +71,7 @@ prompt_template = PromptTemplate(
 )
 
 def answer_sentence(sentence, retriever, llm):
-    docs = retriever.get_relevant_documents(sentence)
+    docs = retriever.invoke(sentence)
     context = "\n\n".join([d.page_content for d in docs])
     prompt = prompt_template.format(sentence=sentence, context=context)
     return llm(prompt)

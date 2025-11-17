@@ -5,3 +5,4 @@ faiss-cpu
 wikipedia
 mistralai
 diskcache
+langchain_huggingface
