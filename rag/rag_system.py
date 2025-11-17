@@ -37,7 +37,7 @@ def make_retriever(index, k=4):
 
 
 class MistralLLM:
-    def __init__(self, api_key, model="devstral-small-latest"):
+    def __init__(self, api_key, model="devstral-small-latest"): # voxtral-mini-latest
         self.client = Mistral(api_key=api_key)
         self.model = model
 
@@ -46,7 +46,7 @@ class MistralLLM:
             model=self.model,
             messages=[{"role": "user", "content": prompt}]
         )
-        return response.message.content
+        return response.outputs
 
 
 PROMPT = """
@@ -74,7 +74,7 @@ def answer_sentence(sentence, retriever, llm):
     docs = retriever.invoke(sentence)
     context = "\n\n".join([d.page_content for d in docs])
     prompt = prompt_template.format(sentence=sentence, context=context)
-    return llm(prompt)
+    return llm(prompt).outputs[0].content
 
 def init_rag(api_key, test_file="tests/test_sentences.json"):
     import json
