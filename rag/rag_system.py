@@ -60,7 +60,7 @@ class MistralLLM:
             completion_args=completion_args,
             tools=tools,
         )
-        return response.outputs
+        return response
 
 
 PROMPT = """
