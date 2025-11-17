@@ -6,7 +6,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mistralai import Mistral
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 def load_wiki_for_query(query: str, lang="ru", max_articles=3):
     wikipedia.set_lang(lang)
