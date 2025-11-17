@@ -42,9 +42,23 @@ class MistralLLM:
         self.model = model
 
     def __call__(self, prompt: str) -> str:
-        response = self.client.chat.complete(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}]
+        inputs = [
+            {"role": "user", "content": prompt}
+        ]
+
+        completion_args = {
+            "temperature": 0.7,
+            "max_tokens": 2048,
+            "top_p": 1
+        }
+
+        tools = []
+        response = self.client.beta.conversations.start(
+            inputs=inputs,
+            model="devstral-small-latest",
+            instructions="""""",
+            completion_args=completion_args,
+            tools=tools,
         )
         return response.outputs
 
