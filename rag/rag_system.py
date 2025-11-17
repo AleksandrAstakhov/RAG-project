@@ -4,6 +4,7 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mistralai import Mistral
+import math
 
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -93,6 +94,7 @@ def answer_sentence(sentence, retriever, llm):
 def init_rag(api_key, test_file="tests/test_sentences.json"):
     import json
     with open(test_file, "r", encoding="utf-8") as f:
+        
         test_data = json.load(f)
         
 
