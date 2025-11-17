@@ -1,13 +1,12 @@
 import os
 import wikipedia
+import json
 from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mistralai import Mistral
 from spellchecker import SpellChecker
-
 from langchain_huggingface import HuggingFaceEmbeddings
-
 from langchain_core.prompts import PromptTemplate
 
 def load_wiki_for_query(query: str, lang="ru", max_articles=3):
@@ -94,26 +93,25 @@ prompt_template = PromptTemplate(
 
 spell = SpellChecker(language="ru")
 
-# def fix_typos(text: str) -> str:
-#     words = text.split()
-#     misspelled = spell.unknown(words)
-#     corrected = []
-#     for w in words:
-#         if w in misspelled:
-#             corrected.append(spell.correction(w))
-#         else:
-#             corrected.append(w)
-#     return " ".join(corrected)
+def fix_typos(text: str) -> str:
+    words = text.split()
+    misspelled = spell.unknown(words)
+    corrected = []
+    for w in words:
+        if w in misspelled:
+            corrected.append(spell.correction(w))
+        else:
+            corrected.append(w)
+    return " ".join(corrected)
 
 def answer_sentence(sentence, retriever, llm):
-    # sentence = fix_typos(sentence)
+    sentence = fix_typos(sentence)
     docs = retriever.invoke(sentence)
     context = "\n\n".join([d.page_content for d in docs])
     prompt = prompt_template.format(sentence=sentence, context=context)
     return llm(prompt).outputs[0].content
 
 def init_rag(api_key, test_file="tests/test_sentences.json"):
-    import json
     with open(test_file, "r", encoding="utf-8") as f:
         
         test_data = json.load(f)
