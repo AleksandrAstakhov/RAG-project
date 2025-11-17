@@ -94,6 +94,7 @@ def init_rag(api_key, test_file="tests/test_sentences.json"):
     import json
     with open(test_file, "r", encoding="utf-8") as f:
         test_data = json.load(f)
+        
 
     all_docs = []
 
