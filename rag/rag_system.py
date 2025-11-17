@@ -37,7 +37,7 @@ def make_retriever(index, k=4):
 
 
 class MistralLLM:
-    def __init__(self, api_key, model="mistral-small-latest"):
+    def __init__(self, api_key, model="devstral-small-latest"):
         self.client = Mistral(api_key=api_key)
         self.model = model
 
