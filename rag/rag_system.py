@@ -99,7 +99,8 @@ def fix_typos(text: str) -> str:
     corrected = []
     for w in words:
         if w in misspelled:
-            corrected.append(spell.correction(w))
+            correction = spell.correction(w)
+            corrected.append(correction if correction is not None else w)
         else:
             corrected.append(w)
     return " ".join(corrected)
