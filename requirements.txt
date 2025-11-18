@@ -8,3 +8,4 @@ diskcache
 langchain_huggingface
 pyspellchecker
 pyaspeller
+streamlit

@@ -75,6 +75,7 @@ PROMPT = """
   Если предложение было с отрицанием — ответ должен оставаться с отрицанием.
 - Нельзя превращать отрицание в утверждение или наоборот.
 - Не добавляйте новые факты, которых нет в контексте.
+- Если в тексте несколько предложений — исправляйте КАЖДОЕ из них.
 
 === Предложение ===
 {sentence}
@@ -113,13 +114,37 @@ def fix_typos_yandex(text: str) -> str:
         return fixed_text
     except Exception as e:
         return text
+    
+def split_into_sentences(text):
+    import re
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    return sentences
 
 def answer_sentence(sentence, retriever, llm):
     sentence = fix_typos_yandex(sentence)
-    docs = retriever.invoke(sentence)
-    context = "\n\n".join([d.page_content for d in docs])
-    prompt = prompt_template.format(sentence=sentence, context=context)
-    return llm(prompt).outputs[0].content
+    sentences = split_into_sentences(sentence)
+    
+    if len(sentences) == 1:
+        docs = retriever.invoke(sentence)
+        context = "\n\n".join([d.page_content for d in docs])
+        prompt = prompt_template.format(sentence=sentence, context=context)
+        return llm(prompt).outputs[0].content
+    else:
+        corrected_sentences = []
+        for sent in sentences:
+            if len(sent.strip()) > 5: 
+                docs = retriever.invoke(sent)
+                context = "\n\n".join([d.page_content for d in docs])
+                prompt = prompt_template.format(sentence=sent, context=context)
+                corrected = llm(prompt).outputs[0].content
+                corrected_sentences.append(corrected)
+            else:
+                corrected_sentences.append(sent)
+        
+        return ". ".join(corrected_sentences)
+
+
 
 def init_rag(api_key, test_file="tests/test_sentences.json"):
     with open(test_file, "r", encoding="utf-8") as f:
