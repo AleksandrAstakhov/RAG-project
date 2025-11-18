@@ -1,48 +1,88 @@
 import json
-from rag.rag_system import answer_sentence, init_rag
-from sentence_transformers import SentenceTransformer, util
-
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-
-def is_semantically_close(a, b, threshold=0.85):
-    emb1 = model.encode(a, convert_to_tensor=True)
-    emb2 = model.encode(b, convert_to_tensor=True)
-    sim = util.cos_sim(emb1, emb2).item()
-    return sim >= threshold, sim
+import os
+from rag.rag_system import answer_sentence, init_rag, MistralLLM
+from langchain_core.prompts import PromptTemplate
 
 
-def normalize(text):
-    return text.lower().strip().replace("ё", "е")
+CHECK_PROMPT = """
+Ты — модель, которая проверяет, исправлено ли неправильное предложение.
+
+=== Кандидат ===
+{candidate}
+
+=== Эталон ===
+{expected}
+
+Смысл вопроса:
+Исправил ли кандидат логическую ошибку и стал ли по смыслу согласованным с эталоном?
+
+Ответь строго в JSON:
+
+{
+  "fixed": true/false
+}
+"""
+
+check_template = PromptTemplate(
+    input_variables=["candidate", "expected"], template=CHECK_PROMPT
+)
+
+
+def llm_check(candidate, expected, llm):
+    prompt = check_template.format(candidate=candidate, expected=expected)
+    out = llm(prompt).outputs[0].content
+
+    try:
+        return json.loads(out)["fixed"]
+    except:
+        return False
+
 
 if __name__ == "__main__":
-    import os
     api_key = os.environ.get("MISTRAL_API_KEY")
     if not api_key:
-        raise ValueError("Установите переменную окружения MISTRAL_API_KEY")
+        raise ValueError("Установите MISTRAL_API_KEY")
 
-    llm, retriever = init_rag(api_key)
+    llm_rag, retriever = init_rag(api_key)
+    judge_llm = MistralLLM(api_key=api_key)
+    llm_no_rag = MistralLLM(api_key=api_key)
 
     with open("tests/test_sentences.json", "r", encoding="utf-8") as f:
         tests = json.load(f)
 
-    correct = 0
-    total = len(tests)
+    rag_fixed_total = 0
+    no_rag_fixed_total = 0
 
     for item in tests:
         inp = item["input"]
         expected = item["expected"]
-        result = answer_sentence(inp, retriever, llm)
+
+        rag_out = answer_sentence(inp, retriever, llm_rag)
+        no_rag_out = llm_no_rag(inp).outputs[0].content
 
         print("\n---")
-        print("Input:   ", inp)
-        print("Expected:", expected)
-        print("Result:  ", result)
+        print("Input:       ", inp)
+        print("Expected:    ", expected)
+        print("RAG out:     ", rag_out)
+        print("LLM no RAG:  ", no_rag_out)
 
-        if is_semantically_close(result, expected):
-            correct += 1
+        rag_fixed = llm_check(rag_out, expected, judge_llm)
 
-    accuracy = correct / total
-    print(f"\n=== Accuracy: {accuracy*100:.2f}% ===")
+        no_rag_fixed = llm_check(no_rag_out, expected, judge_llm)
 
-    if accuracy < 0.0:
-        raise ValueError("Accuracy too low!")
+        print("RAG fixed?    ", rag_fixed)
+        print("NO_RAG fixed? ", no_rag_fixed)
+
+        if rag_fixed:
+            rag_fixed_total += 1
+        if no_rag_fixed:
+            no_rag_fixed_total += 1
+
+    n = len(tests)
+
+    print("\n===== ИТОГ =====")
+    print(f"RAG исправил ошибок:     {rag_fixed_total} / {n}")
+    print(f"NO_RAG исправил ошибок:  {no_rag_fixed_total} / {n}")
+
+    if rag_fixed_total == 0:
+        raise ValueError("RAG плохо исправляет ошибки!")

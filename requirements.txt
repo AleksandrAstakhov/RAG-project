@@ -9,3 +9,4 @@ langchain_huggingface
 pyspellchecker
 pyaspeller
 streamlit
+chromadb
