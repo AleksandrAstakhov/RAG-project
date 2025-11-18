@@ -5,22 +5,13 @@ from langchain_core.prompts import PromptTemplate
 
 
 CHECK_PROMPT = """
-Ты — модель, которая проверяет, исправлено ли неправильное предложение.
+Ты — проверяющий. Имеют ли предложения одинаковый смысл.
 
-=== Кандидат ===
-{candidate}
+Дано:
+- Кандидат: "{candidate}"
+- Эталон: "{expected}"
 
-=== Эталон ===
-{expected}
-
-Смысл вопроса:
-Исправил ли кандидат логическую ошибку и стал ли по смыслу согласованным с эталоном?
-
-Ответь строго в JSON:
-
-{
-  "fixed": true/false
-}
+Верни СТРОГО Да или Нет.
 """
 
 check_template = PromptTemplate(
@@ -33,7 +24,7 @@ def llm_check(candidate, expected, llm):
     out = llm(prompt).outputs[0].content
 
     try:
-        return json.loads(out)["fixed"]
+        return True if out.lower() == "да" else False
     except:
         return False
 
