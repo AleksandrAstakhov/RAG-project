@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     llm_rag, retriever = init_rag(api_key)
 
-    llm_no_rag = MistralLLM(api_key=api_key)
+    llm_no_rag = MistralLLM(api_key=api_key, model="voxtral-small-latest")
 
     with open("tests/test_sentences.json", "r", encoding="utf-8") as f:
         tests = json.load(f)
