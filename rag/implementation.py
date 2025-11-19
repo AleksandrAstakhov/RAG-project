@@ -10,7 +10,12 @@ from mistralai import Mistral
 from langchain_core.prompts import PromptTemplate
 from typing import List
 
-from rag.interfaces import AbstractSearcher, AbstractSplitter, AbstractStorage, AbstractLLM
+from rag.interfaces import (
+    AbstractSearcher,
+    AbstractSplitter,
+    AbstractStorage,
+    AbstractLLM,
+)
 
 
 class WikiSearcher(AbstractSearcher):
@@ -48,14 +53,10 @@ class TextSplitter(AbstractSplitter):
         return self.splitter.split_documents(docs)
 
 
-class VectorStore(AbstractStorage):
-    def __init__(
-        self,
-        persist_dir="chroma_db",
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-    ):
+class VectorStore:
+    def __init__(self, persist_dir="chroma_db"):
         self.persist_dir = persist_dir
-        self.model_name = model_name
+        self.model_name = "sentence-transformers/all-mpnet-base-v2"
         self.db = None
 
     def build_index(self, chunks: List[Document]):
@@ -87,32 +88,40 @@ class MistralLLM(AbstractLLM):
         return response
 
 
-class RAGSystem:
-    PROMPT_TEMPLATE = """
+FEW_SHOT_EXAMPLES = """
+Пример 1:
+Исходное: "Париж є столица Франции."
+Исправленное: "Париж — столица Франции."
+
+Пример 2:
+Исходное: "Эйнштейн открыл теорию относительности в 1905 году."
+Исправленное: "Эйнштейн создал теорию относительности в 1905 году."
+"""
+
+PROMPT_TEMPLATE = f"""
 Вы — эксперт по общим знаниям и популярным фактам.
-
 Исправьте ошибки и опечатки в предложении на основе контекста.
-Если факт неверен и вы не знаете правильной версии — удалите только эту часть.
 
-- Не добавляйте новых фактов.
-- Сохраняйте логическую полярность предложения.
+{FEW_SHOT_EXAMPLES}
 
 === Предложение ===
-{sentence}
+{{sentence}}
 
 === Контекст ===
-{context}
+{{context}}
 
 === Формат ответа ===
 Только исправленное предложение.
 """
 
-    def __init__(self, llm: AbstractLLM, retriever, speller_lang="ru"):
+
+class RAGSystem:
+    def __init__(self, llm, retriever, speller_lang="ru"):
         self.llm = llm
         self.retriever = retriever
         self.speller = YandexSpeller(lang=speller_lang)
         self.prompt_template = PromptTemplate(
-            input_variables=["sentence", "context"], template=self.PROMPT_TEMPLATE
+            input_variables=["sentence", "context"], template=PROMPT_TEMPLATE
         )
 
     def fix_typos(self, text: str) -> str:
@@ -121,7 +130,7 @@ class RAGSystem:
         except:
             return text
 
-    def split_sentences(self, text: str):
+    def split_sentences(self, text: str) -> List[str]:
         sentences = re.split(r"[.!?]+", text)
         return [s.strip() for s in sentences if s.strip()]
 
@@ -133,13 +142,28 @@ class RAGSystem:
         for sent in sentences:
             if len(sent.strip()) > 5:
                 docs = self.retriever.invoke(sent)
-                context = "\n\n".join([d.page_content for d in docs])
-                prompt = self.prompt_template.format(sentence=sent, context=context)
-                corrected = self.llm(prompt).outputs[0].content
+                context_paragraphs = []
+                for d in docs:
+                    paragraphs = [
+                        p.strip()
+                        for p in d.page_content.split("\n")
+                        if len(p.strip()) > 30
+                    ]
+                    context_paragraphs.extend(paragraphs)
+                context_text = "\n\n".join(context_paragraphs[:4])
+                prompt = self.prompt_template.format(
+                    sentence=sent, context=context_text
+                )
+                resp = self.llm(prompt)
+                if hasattr(resp, "outputs") and resp.outputs:
+                    corrected = resp.outputs[0].content
+                elif hasattr(resp, "content"):
+                    corrected = resp.content
+                else:
+                    corrected = sent
                 corrected_sentences.append(corrected)
             else:
                 corrected_sentences.append(sent)
-
         return ". ".join(corrected_sentences)
 
 
