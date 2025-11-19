@@ -71,7 +71,7 @@ class MistralLLM:
         tools = []
         response = self.client.beta.conversations.start(
             inputs=inputs,
-            model="devstral-small-latest",
+            model=self.model,
             instructions="""""",
             completion_args=completion_args,
             tools=tools,
@@ -98,6 +98,7 @@ PROMPT = """
 
 === Формат ответа ===
 Только исправленное предложение, сохраняя исходную утвердительную/отрицательную форму.
+Только исправленное предложение, без добавления новых фактов.
 """
 
 
@@ -105,19 +106,6 @@ prompt_template = PromptTemplate(
     input_variables=["sentence", "context"], template=PROMPT
 )
 
-# spell = SpellChecker(language="ru")
-
-# def fix_typos(text: str) -> str:
-#     words = text.split()
-#     misspelled = spell.unknown(words)
-#     corrected = []
-#     for w in words:
-#         if w in misspelled:
-#             correction = spell.correction(w)
-#             corrected.append(correction if correction is not None else w)
-#         else:
-#             corrected.append(w)
-#     return " ".join(corrected)
 speller = YandexSpeller(lang="ru")
 
 
