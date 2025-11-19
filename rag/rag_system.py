@@ -160,7 +160,7 @@ def init_rag(api_key, test_file="tests/test_sentences.json"):
         )
 
     for item in test_data:
-        wiki_docs = load_wiki_for_query(item["input"])
+        wiki_docs = load_wiki_for_query(item["expected"])
         all_docs.extend(wiki_docs)
 
     chunks = split_documents(all_docs)
