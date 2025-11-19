@@ -10,12 +10,9 @@ from mistralai import Mistral
 from langchain_core.prompts import PromptTemplate
 from typing import List
 
-from interfaces import AbstractSearcher, AbstractSplitter, AbstractStorage, AbstractLLM
+from rag.interfaces import AbstractSearcher, AbstractSplitter, AbstractStorage, AbstractLLM
 
 
-# ---------------------------
-# Реализации
-# ---------------------------
 class WikiSearcher(AbstractSearcher):
     def __init__(self, lang="ru", max_articles=3):
         self.lang = lang
