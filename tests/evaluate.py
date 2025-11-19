@@ -15,18 +15,26 @@ CHECK_PROMPT = """
 """
 
 check_template = PromptTemplate(
-    input_variables=["candidate", "expected"], template=CHECK_PROMPT
+    input_variables=["candidate", "expected"],
+    template=CHECK_PROMPT
 )
+
+def extract_text(resp):
+    """Унифицированное извлечение текста из ответа любой модели."""
+    if resp is None:
+        return ""
+    if hasattr(resp, "content"):
+        return resp.content
+    if hasattr(resp, "outputs") and resp.outputs:
+        return resp.outputs[0].content
+    return str(resp)
 
 
 def llm_check(candidate, expected, llm):
     prompt = check_template.format(candidate=candidate, expected=expected)
-    out = llm(prompt).outputs[0].content
+    out = extract_text(llm(prompt)).strip().lower()
 
-    try:
-        return True if out.lower() == "да" else False
-    except:
-        return False
+    return out == "да"
 
 
 if __name__ == "__main__":
@@ -49,7 +57,8 @@ if __name__ == "__main__":
         expected = item["expected"]
 
         rag_out = answer_sentence(inp, retriever, llm_rag)
-        no_rag_out = llm_no_rag(inp).outputs[0].content
+        no_rag_raw = llm_no_rag(prompt=inp)
+        no_rag_out = extract_text(no_rag_raw)
 
         print("\n---")
         print("Input:       ", inp)
@@ -58,7 +67,6 @@ if __name__ == "__main__":
         print("LLM no RAG:  ", no_rag_out)
 
         rag_fixed = llm_check(rag_out, expected, judge_llm)
-
         no_rag_fixed = llm_check(no_rag_out, expected, judge_llm)
 
         print("RAG fixed?    ", rag_fixed)
