@@ -10,3 +10,4 @@ pyspellchecker
 pyaspeller
 streamlit
 chromadb
+streamlit

@@ -56,7 +56,7 @@ class TextSplitter(AbstractSplitter):
 class VectorStore(AbstractStorage):
     def __init__(self, persist_dir="chroma_db"):
         self.persist_dir = persist_dir
-        self.model_name = "sentence-transformers/all-mpnet-base-v2"
+        self.model_name = "sentence-transformers/paraphrase-MiniLM-L6-v2"
         self.db = None
 
     def build_index(self, chunks: List[Document]):
