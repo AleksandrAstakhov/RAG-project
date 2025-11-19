@@ -53,7 +53,7 @@ class TextSplitter(AbstractSplitter):
         return self.splitter.split_documents(docs)
 
 
-class VectorStore:
+class VectorStore(AbstractStorage):
     def __init__(self, persist_dir="chroma_db"):
         self.persist_dir = persist_dir
         self.model_name = "sentence-transformers/all-mpnet-base-v2"
