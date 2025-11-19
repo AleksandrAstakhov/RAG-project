@@ -37,7 +37,6 @@ def cos_sim(a, b):
 
 
 def llm_check_embed(answer: str) -> bool:
-    """True → ближе к 'Да', False → ближе к 'Нет'."""
     emb_ans = embed_model.encode(answer, convert_to_numpy=True)
     return cos_sim(emb_ans, emb_yes) >= cos_sim(emb_ans, emb_no)
 
