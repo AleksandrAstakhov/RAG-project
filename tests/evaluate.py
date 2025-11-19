@@ -1,40 +1,44 @@
 import json
 import os
+import numpy as np
+from sentence_transformers import SentenceTransformer
 from rag.rag_system import answer_sentence, init_rag, MistralLLM
-from langchain_core.prompts import PromptTemplate
 
 
-CHECK_PROMPT = """
-Ты — проверяющий. Имеют ли предложения одинаковый смысл.
+PROMPT = """
+Вы — эксперт по общим знаниям и популярным фактам.
 
-Дано:
-- Кандидат: "{candidate}"
-- Эталон: "{expected}"
+Ваша задача — исправить ошибки и опечатки в предложении с помощью контекста.
+Если факт неверен и вы не знаете правильной версии — удалите только эту часть.
 
-Верни СТРОГО Да или Нет.
+- Сохраняйте исходную логическую полярность высказывания.
+  Если предложение было утвердительным — ответ должен быть утвердительным.
+  Если предложение было с отрицанием — ответ должен оставаться с отрицанием.
+- Нельзя превращать отрицание в утверждение или наоборот.
+- Не добавляйте новые факты, которых нет в контексте.
+=== Предложение ===
+{sentence}
+
+=== Контекст ===
+{context}
+
+=== Формат ответа ===
+Только исправленное предложение, сохраняя исходную утвердительную/отрицательную форму.
 """
 
-check_template = PromptTemplate(
-    input_variables=["candidate", "expected"],
-    template=CHECK_PROMPT
-)
-
-def extract_text(resp):
-    """Унифицированное извлечение текста из ответа любой модели."""
-    if resp is None:
-        return ""
-    if hasattr(resp, "content"):
-        return resp.content
-    if hasattr(resp, "outputs") and resp.outputs:
-        return resp.outputs[0].content
-    return str(resp)
+embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+emb_yes = embed_model.encode("Да", convert_to_numpy=True)
+emb_no = embed_model.encode("Нет", convert_to_numpy=True)
 
 
-def llm_check(candidate, expected, llm):
-    prompt = check_template.format(candidate=candidate, expected=expected)
-    out = extract_text(llm(prompt)).strip().lower()
+def cos_sim(a, b):
+    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
-    return out == "да"
+
+def llm_check_embed(answer: str) -> bool:
+    """True → ближе к 'Да', False → ближе к 'Нет'."""
+    emb_ans = embed_model.encode(answer, convert_to_numpy=True)
+    return cos_sim(emb_ans, emb_yes) >= cos_sim(emb_ans, emb_no)
 
 
 if __name__ == "__main__":
@@ -43,7 +47,7 @@ if __name__ == "__main__":
         raise ValueError("Установите MISTRAL_API_KEY")
 
     llm_rag, retriever = init_rag(api_key)
-    judge_llm = MistralLLM(api_key=api_key)
+
     llm_no_rag = MistralLLM(api_key=api_key)
 
     with open("tests/test_sentences.json", "r", encoding="utf-8") as f:
@@ -57,8 +61,14 @@ if __name__ == "__main__":
         expected = item["expected"]
 
         rag_out = answer_sentence(inp, retriever, llm_rag)
-        no_rag_raw = llm_no_rag(prompt=inp)
-        no_rag_out = extract_text(no_rag_raw)
+
+        no_rag_prompt = PROMPT.format(sentence=inp, context="")
+        no_rag_resp = llm_no_rag(no_rag_prompt)
+
+        if hasattr(no_rag_resp, "content"):
+            no_rag_out = no_rag_resp.content
+        else:
+            no_rag_out = no_rag_resp.outputs[0].content
 
         print("\n---")
         print("Input:       ", inp)
@@ -66,8 +76,8 @@ if __name__ == "__main__":
         print("RAG out:     ", rag_out)
         print("LLM no RAG:  ", no_rag_out)
 
-        rag_fixed = llm_check(rag_out, expected, judge_llm)
-        no_rag_fixed = llm_check(no_rag_out, expected, judge_llm)
+        rag_fixed = llm_check_embed(rag_out)
+        no_rag_fixed = llm_check_embed(no_rag_out)
 
         print("RAG fixed?    ", rag_fixed)
         print("NO_RAG fixed? ", no_rag_fixed)
