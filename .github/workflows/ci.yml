@@ -1,0 +1,32 @@
+name: RAG Model Test
+
+on:
+  push:
+    branches: ["dev"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  test-model:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip -q install --upgrade pip
+          pip -q install -r requirements.txt
+
+      - name: Set environment variables
+        run: echo "MISTRAL_API_KEY=${{ secrets.MISTRAL_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Run evaluation
+        run: python -m tests.evaluate

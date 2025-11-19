@@ -1,0 +1,13 @@
+langchain
+langchain-community
+sentence-transformers
+faiss-cpu
+wikipedia
+mistralai
+diskcache
+langchain_huggingface
+pyspellchecker
+pyaspeller
+streamlit
+chromadb
+streamlit
