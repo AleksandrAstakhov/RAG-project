@@ -2,8 +2,8 @@ import json
 import os
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from rag.rag_system import answer_sentence, init_rag, MistralLLM
 
+from rag.implementation import init_rag, RAGSystem, MistralLLM
 
 PROMPT = """
 Вы — эксперт по общим знаниям и популярным фактам.
@@ -44,9 +44,9 @@ def llm_check_embed(answer: str) -> bool:
 if __name__ == "__main__":
     api_key = os.environ.get("MISTRAL_API_KEY")
     if not api_key:
-        raise ValueError("Установите MISTRAL_API_KEY")
+        raise ValueError("Установите MISTRAL_API_KEY в переменных окружения")
 
-    llm_rag, retriever = init_rag(api_key)
+    rag_system: RAGSystem = init_rag(api_key)
 
     llm_no_rag = MistralLLM(api_key=api_key, model="voxtral-small-latest")
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         inp = item["input"]
         expected = item["expected"]
 
-        rag_out = answer_sentence(inp, retriever, llm_rag)
+        rag_out = rag_system.answer_sentence(inp)
 
         no_rag_prompt = PROMPT.format(sentence=inp, context="")
         no_rag_resp = llm_no_rag(no_rag_prompt)
@@ -88,7 +88,6 @@ if __name__ == "__main__":
             no_rag_fixed_total += 1
 
     n = len(tests)
-
     print("\n===== ИТОГ =====")
     print(f"RAG исправил ошибок:     {rag_fixed_total} / {n}")
     print(f"NO_RAG исправил ошибок:  {no_rag_fixed_total} / {n}")
