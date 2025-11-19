@@ -10,7 +10,7 @@ from mistralai import Mistral
 from langchain_core.prompts import PromptTemplate
 from typing import List
 
-from rag.interfaces import (
+from interfaces import (
     AbstractSearcher,
     AbstractSplitter,
     AbstractStorage,

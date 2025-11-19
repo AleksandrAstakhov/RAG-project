@@ -22,5 +22,5 @@ pip install -r requirements.txt
 
 из корневой паки
 ```
-streamlit run rug/ui.py
+streamlit run rag/ui.py
 ```

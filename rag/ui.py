@@ -1,9 +1,9 @@
 import streamlit as st
 import os
 import re
-from rag.implementation import init_rag
+from implementation import init_rag
 
-rag = init_rag(os.environ.get("MISTRAL_API_KEY"))
+api_key = "BMD000oHMe1lT5n0LU6SfGmFCdRPf6dr"
 
 
 def process_text_with_sentences(text, rag):
@@ -28,11 +28,10 @@ st.set_page_config(page_title="Умное исправление текста", 
 st.title("🔍 Умное исправление текста")
 
 if "rag_initialized" not in st.session_state:
-    api_key = os.environ.get("MISTRAL_API_KEY")
     if api_key:
         with st.spinner("🔄 Загружаем систему исправления..."):
             try:
-                st.session_state.llm, st.session_state.retriever = init_rag(api_key)
+                st.session_state.rag = init_rag(api_key)
                 st.session_state.rag_initialized = True
             except Exception as e:
                 st.error(f"❌ Ошибка загрузки: {e}")
@@ -54,7 +53,7 @@ if st.session_state.get("rag_initialized"):
                 with st.spinner("Проверяем каждое предложение..."):
                     try:
                         result = process_text_with_sentences(
-                            user_text, st.session_state.retriever, st.session_state.llm
+                            user_text, st.session_state.rag
                         )
                         st.session_state.last_result = result
                     except Exception as e:
@@ -68,8 +67,10 @@ if st.session_state.get("rag_initialized"):
             st.success(st.session_state.last_result)
 
             if user_text and st.session_state.last_result:
-                original_sentences = rag.split_sentences(user_text)
-                corrected_sentences = rag.split_sentences(st.session_state.last_result)
+                original_sentences = st.session_state.rag.split_sentences(user_text)
+                corrected_sentences = st.session_state.rag.split_sentences(
+                    st.session_state.last_result
+                )
 
                 st.divider()
                 st.subheader("📊 Детали исправлений")
