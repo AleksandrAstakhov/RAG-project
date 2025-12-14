@@ -3,8 +3,6 @@ import os
 import re
 from implementation import init_rag
 
-api_key = "BMD000oHMe1lT5n0LU6SfGmFCdRPf6dr"
-
 
 def process_text_with_sentences(text, rag):
     sentences = rag.split_sentences(text)
